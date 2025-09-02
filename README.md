@@ -163,5 +163,3 @@ All PRs should pass linting checks before being merged.
 This backend serves as the API layer for the Discover Program. For frontend details, check **`apps/frontend/README.md`**.
 
 ---
-
-Let me know if you'd like any refinements! 🚀

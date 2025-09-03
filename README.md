@@ -72,7 +72,7 @@ Start the backend server in development mode:
 npm run dev
 ```
 
-The API will be available at **`http://localhost:3000/`** by default.
+The API will be available at **`http://localhost:5050/`** by default.
 
 ### 3️⃣ Build & Run for Production
 
@@ -82,6 +82,87 @@ To generate a production-ready build:
 npm run build
 npm start
 ```
+
+## 4️⃣ Google OAuth Setup Guide
+
+Follow these steps to set up Google OAuth for your forked template.
+
+## Prerequisites
+- A Google account
+- A Supabase account and project
+
+## Step 1: Get Your Supabase Project URL
+1. Go to your Supabase dashboard
+2. Navigate to **Project Settings** → **Data API**
+3. Copy your **Project URL** (looks like: `https://abcdefghijk.supabase.co`)
+4. You'll need this for the next steps
+
+## Step 2: Create Google OAuth Credentials
+
+### 2.1 Access Google Cloud Console
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Create a new project
+
+### 2.2 Enable Google+ APIs
+1. Click Hamburger Icon at top left -> **APIs & Services**
+2. Search and enable: **Google+ API** and **Google+ Domains API**
+
+### 2.3 Configure OAuth Consent Screen
+1. Navigate to **APIs & Services** → **OAuth consent screen**
+2. Choose **External** user type
+3. Fill in required fields:
+   - **App name**: Your app name
+   - **User support email**: Your email
+   - **Developer contact information**: Your email
+4. Click **Save and Continue** through all steps
+
+### 2.4 Create OAuth 2.0 Client
+1. Go to **APIs & Services** → **Clients**
+2. Click **Create Client**
+3. Select **Web application**
+4. Name it (e.g., "disc-project-26")
+5. Under **Authorized redirect URIs**, click **Add URI** and enter:
+   ```
+   [YOUR_SUPABASE_PROJECT_URL]/auth/v1/callback
+   ```
+   **Example**: `https://abcdefghijk.supabase.co/auth/v1/callback`
+6. Click **Create**
+7. **Copy both the Client ID and Client Secret**
+
+## Step 3: Configure Supabase
+1. In your Supabase dashboard, go to **Authentication** → **Providers**
+2. Find **Google** and toggle it **ON**
+3. Paste your **Client ID** and **Client Secret**
+4. Click **Save**
+
+## Step 4: Update Environment Variables
+1. Get supabase credentials from **Project Settings** -> **API Keys**
+2. Update ```.env``` with credentials
+   ```bash
+   SUPABASE_URL=your_supabase_project_url
+   SUPABASE_ANON_KEY=your_supabase_anon_key
+   FRONTEND_URL=http://localhost:5173
+   ```
+
+## Step 5: Test the Integration
+1. Start your backend: `npm run dev`
+2. Test the auth endpoint: `curl http://localhost:5050/auth/google`
+3. You should receive a JSON response with a Google OAuth URL
+
+## Troubleshooting
+- **"Redirect URI mismatch"**: Double-check your Supabase project URL in Google Console
+- **"Invalid client"**: Verify your Client ID and Secret in Supabase
+- **Settings not taking effect**: OAuth changes can take 5 minutes to propagate
+
+## Security Notes
+- Keep your `.env` file private (already in `.gitignore`)
+- Never commit Client ID/Secret to version control
+- For production, add your actual domain to authorized origins
+
+
+### 4️⃣ MASSIVE NOTE!!!!
+
+Be sure that you have at least a users table created in supabase. If you don't, and you or a teammate attempts to log in via Google, then those users will not be created in your table. 
 
 ---
 

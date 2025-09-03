@@ -112,7 +112,6 @@ export async function login(
 
 export async function getMe(req: Request, res: Response): Promise<void> {
   try {
-    // TODO OLD TOKEN LOGIC
     // const token = req.cookies?.session || req.headers.authorization?.split(' ')[1];
     const token =
       req.headers.authorization?.split(' ')[1] || req.cookies?.session;
@@ -224,9 +223,9 @@ export async function getAllUsers(
     // console.log('Getting all users...');
     const { data: users, error } = await supabase
       .from('users')
-      .select('username, email, firstname, lastname')
+      .select('username, email')
       .order('username', { ascending: true });
-
+    
     if (error) {
       // console.error('Error fetching users:', error);
       res.status(400).json({ error: error.message });
@@ -258,7 +257,7 @@ export async function googleAuth(_req: Request, res: Response): Promise<void> {
     // console.log('Generated OAuth URL:', url);
     res.json({ url });
   } catch (error) {
-    // console.error('Google auth error:', error);
+    console.error('Google auth error:', error);
     res
       .status(500)
       .json({ error: `Failed to initialize Google auth: ${error}'` });
@@ -285,7 +284,7 @@ export async function handleOAuthCallback(
     }
 
     const { session, user } = data;
-    // console.log('Got user:', user.email);
+    console.log('Got user:', user.email);
 
     const { data: existingUser, error: queryError } = await supabase
       .from('users')
@@ -294,7 +293,7 @@ export async function handleOAuthCallback(
       .single();
 
     if (queryError && queryError.code !== 'PGRST116') {
-      // console.error('Error checking for existing user:', queryError);
+      console.error('Error checking for existing user:', queryError);
       throw queryError;
     }
 
@@ -540,22 +539,6 @@ export async function updatePassword(
       });
       return;
     }
-
-    // TODO: OLD CODE IN CASE NEW CODE FAILS
-    // const {
-    //   // too lazy to fix this - ethan
-    //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    //   data: { session },
-    //   error: sessionError,
-    // } = await supabase.auth.setSession({
-    //   access_token: token,
-    //   refresh_token: token,
-    // });
-    // if (sessionError) {
-    // // console.error('Session error:', sessionError);
-    // res.status(401).json({ error: sessionError.message });
-    // Using the session to ensure it's active
-    // console.log('Session  - established:', !!session);
 
     const {
       data: { session },

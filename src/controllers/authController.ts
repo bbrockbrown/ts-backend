@@ -94,7 +94,7 @@ export async function login(
 
     res.cookie('session', data.session.access_token, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 3600 * 1000,
       path: '/',
@@ -112,8 +112,10 @@ export async function login(
 
 export async function getMe(req: Request, res: Response): Promise<void> {
   try {
+    // TODO OLD TOKEN LOGIC
+    // const token = req.cookies?.session || req.headers.authorization?.split(' ')[1];
     const token =
-      req.cookies?.session || req.headers.authorization?.split(' ')[1];
+      req.headers.authorization?.split(' ')[1] || req.cookies?.session;
 
     // console.log('GetMe called with token:', token ? 'present' : 'missing');
 
@@ -156,7 +158,7 @@ export async function getMe(req: Request, res: Response): Promise<void> {
     res.json({
       id: user.id,
       email: user.email,
-      username: user.email?.split('@')[0] || 'user',
+      username: user.email?.split('@')[0] || 'user', // TODO: can cause duplicate usernames
     });
   } catch (error) {
     // console.error('ME endpoint error:', error);
@@ -396,9 +398,8 @@ export async function handleToken(
             : null),
       };
 
-      // too lazy to fix this - ethan
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { data: insertedUser, error: insertError } = await supabase
+      // Not destructuring insertedUser
+      const { error: insertError } = await supabase
         .from('users')
         .insert([newUser])
         .select()
@@ -523,7 +524,8 @@ export async function updatePassword(
 ): Promise<void> {
   try {
     const { password } = req.body;
-    const token = req.headers.authorization?.split(' ')[1];
+    const token =
+      req.headers.authorization?.split(' ')[1] || req.cookies?.session;
 
     if (!password) {
       res.status(400).json({
@@ -539,9 +541,23 @@ export async function updatePassword(
       return;
     }
 
+    // TODO: OLD CODE IN CASE NEW CODE FAILS
+    // const {
+    //   // too lazy to fix this - ethan
+    //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    //   data: { session },
+    //   error: sessionError,
+    // } = await supabase.auth.setSession({
+    //   access_token: token,
+    //   refresh_token: token,
+    // });
+    // if (sessionError) {
+    // // console.error('Session error:', sessionError);
+    // res.status(401).json({ error: sessionError.message });
+    // Using the session to ensure it's active
+    // console.log('Session  - established:', !!session);
+
     const {
-      // too lazy to fix this - ethan
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       data: { session },
       error: sessionError,
     } = await supabase.auth.setSession({
@@ -549,13 +565,13 @@ export async function updatePassword(
       refresh_token: token,
     });
 
-    if (sessionError) {
+    if (sessionError || !session) {
       // console.error('Session error:', sessionError);
-      res.status(401).json({ error: sessionError.message });
+      res.status(401).json({ error: sessionError?.message || 'Invalid token' });
       return;
     }
 
-    // Using the session to ensure it's active
+    // Using the session to ensure it's active for password update
     // console.log('Session established:', !!session);
 
     const { data, error } = await supabase.auth.updateUser({
